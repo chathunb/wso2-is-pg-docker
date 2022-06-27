@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  wso2-identity-server:
+    hostname: wso-is
+    image: 'wso2/wso2is:5.11.0'
+    ports:
+      - "9763:9763"
+      - "9443:9443"
+    extra_hosts:
+      - "wso-is:127.0.0.1"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-k",
+          "-f",
+          "https://localhost:9443/carbon/admin/login.jsp"
+        ]
+      interval: 5s
+      timeout: 120s
+      start_period: 100s
+    volumes:
+      - ./conf/identity-server:/home/wso2carbon/wso2-config-volume
+    networks:
+      - app_network
+    depends_on:
+      - agri-postgres-database
+
+networks:
+  app_network:
+

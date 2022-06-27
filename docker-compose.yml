@@ -1,0 +1,59 @@
+version: '3.8'
+services:
+  wso2-is-postgres-database:
+    hostname: wso-is-postgres
+    container_name: wso2-is-postgres-database
+    image: 'postgres:14.3'
+    volumes:
+      - ./conf/postgres/scripts:/docker-entrypoint-initdb.d
+      - postgres-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"  ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: 'always'
+    ports:
+      - 5436:5432
+    extra_hosts:
+      - "wso-is-postgres:127.0.0.1"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: wso2
+      POSTGRES_HOST: postgres
+    networks:
+      - app_network
+
+  wso2-identity-server:
+    hostname: wso-is
+    image: 'wso2/wso2is:5.11.0'
+    ports:
+      - "9763:9763"
+      - "9443:9443"
+    extra_hosts:
+      - "wso-is:127.0.0.1"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-k",
+          "-f",
+          "https://localhost:9443/carbon/admin/login.jsp"
+        ]
+      interval: 5s
+      timeout: 120s
+      start_period: 100s
+    volumes:
+      - ./conf/identity-server:/home/wso2carbon/wso2-config-volume
+    networks:
+      - app_network
+    depends_on:
+      wso2-is-postgres-database:
+        condition: service_healthy
+
+networks:
+  app_network:
+volumes:
+  postgres-volume:
